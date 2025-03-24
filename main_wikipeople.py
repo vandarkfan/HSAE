@@ -23,11 +23,7 @@ def main():
     train_triples = json.load(open('data/processed/WikiPeople-fasle/train2idname.tar'))
     valid_triples = json.load(open('data/processed/WikiPeople-fasle/valid2idname.tar'))
     test_triples = json.load(open('data/processed/WikiPeople-fasle/test2idname.tar'))
-    # test_triples = read(configs, configs.dataset_path, configs.dataset, 'beamkgc_rebuttle.txt')
     all_triples = train_triples + valid_triples + test_triples
-    # checkpoint111 = torch.load(configs.model_path)
-    ## construct name list
-    # configs.complex_dataset + '/t5_cluster30.tar'
     print(configs.n_aggcluster)
     if int(configs.n_aggcluster) == 0:
         original_ent_name_list, rel_name_list = read_name(configs, configs.dataset_path, configs.dataset,
@@ -43,9 +39,6 @@ def main():
     print('tokenizing entities...')
     src_description_list = tokenizer.batch_decode([descrip[:-1] for descrip in tokenizer(description_list, max_length=configs.src_descrip_max_length, truncation=True).input_ids])
     tgt_description_list = tokenizer.batch_decode([descrip[:-1] for descrip in tokenizer(description_list, max_length=configs.tgt_descrip_max_length, truncation=True).input_ids])
-    #都是描述，一个是限制40，一个限制10
-    ## construct prefix trie
-    # ent_token_ids_in_trie .type: list(list(ids))
 
     ent_token_ids_in_trie = tokenizer(['<extra_id_0>' + ent_name + '<extra_id_1>' for ent_name in original_ent_name_list], max_length=configs.train_tgt_max_length, truncation=True).input_ids
 
@@ -144,9 +137,7 @@ def main():
         model_path = checkpoint_callback.best_model_path
     else:
         if configs.istrain :
-            # model = T5Finetuner.load_from_checkpoint(configs.model_path, strict=False, configs=configs, **kw_args)
             model = T5Finetuner(configs, **kw_args)
-            # model = T5Finetuner(configs, **kw_args)
             print('model construction done.', flush=True)
             trainer.fit(model, datamodule)
             model_path = checkpoint_callback.best_model_path
@@ -154,7 +145,6 @@ def main():
             model_path = configs.model_path
     print('model_path:', model_path, flush=True)
     model = T5Finetuner.load_from_checkpoint(model_path, strict=False, configs=configs, **kw_args)
-    # print(model.parameters())
     trainer.test(model, dataloaders=datamodule)
 
 
@@ -170,11 +160,6 @@ if __name__ == '__main__':
     parser.add_argument('-num_workers', type=int, default=0, help='Number of processes to construct batches')
     parser.add_argument('-save_dir', type=str, default='', help='')
     parser.add_argument('-pretrainKG', type=int, default=0, help='')
-    parser.add_argument('-e', type=int, default=1, help='')
-    parser.add_argument('-start_layer', type=int, default=0, help='')
-    parser.add_argument('-end_layer', type=int, default=11, help='')
-    parser.add_argument('-w_SBeam', type=float, default=0, help='weight of structure beam')
-    parser.add_argument('-n_aggcluster', type=int, default=0, help='')
     parser.add_argument('-istrain', type=int, default=0, help='')
     parser.add_argument('-pretrained_model', type=str, default='t5-base', help='')
     parser.add_argument('-batch_size', default=64, type=int, help='Batch size')
