@@ -395,77 +395,7 @@ class ModifiedT5ForConditionalGeneration(T5PreTrainedModel):
 
     def get_decoder(self):
         return self.decoder
-  
-    def get_selected_entity_weights_train(self, topk_indices):
-        """
-        动态计算选中实体的权重矩阵（支持 GPU 加速）
-        topk_indices: (batch_size, k)
-        返回值: (batch_size, k, vocab_size)
-        """
-        batch_size, k = topk_indices.shape
 
-        # 1. 获取选中实体的 token ID 和原始权重
-        # topk_indices: (batch_size, k) -> (batch_size * k,)
-        flat_topk_indices = topk_indices.view(-1)
-
-        # 获取对应的 token ID 和权重（已填充到 max_tokens）
-        selected_token_ids = self.padded_token_ids[flat_topk_indices]  # (batch_size * k, max_tokens)
-        selected_raw_weights = []
-        for ent_id in flat_topk_indices.tolist():
-            selected_raw_weights.append(self.entity_weights[ent_id])  # 动态处理
-        selected_raw_weights = torch.cat(selected_raw_weights, dim=0)
-        mask = (selected_token_ids != 0)  # (batch_size * k, max_tokens)
-        extended_weights = torch.zeros_like(selected_token_ids, dtype=torch.float)  # (batch_size * k, max_tokens)
-        extended_weights[mask] = selected_raw_weights.view(-1)  # 填充到 max_tokens
-        extended_weights = torch.softmax(extended_weights, dim=-1) * mask.float()  # (batch_size * k, max_tokens)
-        selected_weights_matrix = torch.zeros(
-            batch_size * k, self.vocab_size,
-            device=selected_token_ids.device
-        )  # (batch_size * k, vocab_size)
-        selected_weights_matrix.scatter_(
-            dim=1,
-            index=selected_token_ids,
-            src=extended_weights
-        )  # (batch_size * k, vocab_size)
-        selected_weights_matrix = selected_weights_matrix.view(batch_size, k, self.vocab_size)
-        return selected_weights_matrix
-
-
-    def get_selected_entity_weights_test(self, topk_indices):
-        """
-        动态计算选中实体的权重矩阵（支持 GPU 加速）
-        topk_indices: (batch_size, k)
-        返回值: (batch_size, k, vocab_size)
-        """
-        batch_size, k = topk_indices.shape
-        flat_topk_indices = topk_indices.view(-1)
-        selected_token_ids = self.padded_token_ids[flat_topk_indices]  # (batch_size * k, max_tokens)
-        selected_raw_weights = []
-        for ent_id in flat_topk_indices.tolist():
-            selected_raw_weights.append(self.entity_weights[ent_id])  # 动态处理
-        print(topk_indices)
-        for i in range(batch_size):
-            for j in range(k):
-                print(topk_indices[i,j])
-                print(self.entity_weights[topk_indices[i,j]])
-        selected_raw_weights = torch.cat(selected_raw_weights, dim=0)
-        mask = (selected_token_ids != 0)  # (batch_size * k, max_tokens)
-        extended_weights = torch.zeros_like(selected_token_ids, dtype=torch.float)  # (batch_size * k, max_tokens)
-        extended_weights[mask] = selected_raw_weights.view(-1)  # 填充到 max_tokens
-        extended_weights = torch.softmax(extended_weights, dim=-1) * mask.float()  # (batch_size * k, max_tokens)
-        selected_weights_matrix = torch.zeros(
-            batch_size * k, self.vocab_size,
-            device=selected_token_ids.device
-        )  # (batch_size * k, vocab_size)
-
-        selected_weights_matrix.scatter_(
-            dim=1,
-            index=selected_token_ids,
-            src=extended_weights
-        )  # (batch_size * k, vocab_size)
-
-        selected_weights_matrix = selected_weights_matrix.view(batch_size, k, self.vocab_size)
-        return selected_weights_matrix
 
     def forward(
         self,
