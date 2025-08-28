@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿<h1 align="center">
+﻿﻿﻿﻿﻿﻿<h1 align="center">
   HSAE
 </h1>
 
@@ -19,8 +19,8 @@ This repository includes the source code of the paper submitted to KBS.
 
 ### Dataset:
 
-- We use WN18RR, FB15k-237, ICEWS14, WikiPeople and NELL-One dataset for knowledge graph link prediction. 
-- All the preprocessed data are included in the `./data/processed/` directory.
+- We use eight dataset for knowledge graph link prediction. 
+- The preprocessed data are included in the `./data/processed/` directory.
 
 
 ### Results:
